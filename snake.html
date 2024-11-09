@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมงูสมจริง</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            flex-direction: column;
+        }
+        canvas {
+            background-color: #222;
+            border: 2px solid #555;
+            margin-top: 20px;
+        }
+        .score {
+            font-size: 24px;
+            color: #0c0000;
+            margin-bottom: 10px;
+        }
+        .start-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .start-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="score">คะแนน: <span id="score">0</span></div>
+<button class="start-btn" onclick="startGame()">เริ่มเกม</button>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreElement = document.getElementById("score");
+
+    const box = 20;
+    const canvasSize = 400;
+    let snake, direction, score, speed, isMoving, game, food;
+
+    function resetGame() {
+        snake = [{ x: 10 * box, y: 10 * box }];
+        direction = "RIGHT";
+        score = 0;
+        speed = 200; // ตั้งค่าความเร็วเริ่มต้นใหม่
+        isMoving = false;
+        scoreElement.innerText = score;
+        food = {
+            x: Math.floor(Math.random() * (canvasSize / box)) * box,
+            y: Math.floor(Math.random() * (canvasSize / box)) * box
+        };
+    }
+
+    document.addEventListener("keydown", changeDirection);
+
+    function changeDirection(event) {
+        const key = event.key;
+        if (!isMoving && (key === "ArrowUp" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowRight")) {
+            isMoving = true;
+            game = setInterval(updateGame, speed);
+        }
+        if (key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+        else if (key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+        else if (key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+        else if (key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    }
+
+    function startGame() {
+        if (isMoving) return;
+        resetGame();
+        game = setInterval(updateGame, speed);
+    }
+
+    function updateGame() {
+        if (checkCollision()) {
+            clearInterval(game);
+            isMoving = false;
+            displayGameOver();
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+        drawFood();
+
+        let snakeX = snake[0].x;
+        let snakeY = snake[0].y;
+
+        if (direction === "UP") snakeY -= box;
+        if (direction === "DOWN") snakeY += box;
+        if (direction === "LEFT") snakeX -= box;
+        if (direction === "RIGHT") snakeX += box;
+
+        if (snakeX === food.x && snakeY === food.y) {
+            score += 10;
+            scoreElement.innerText = score;
+            food = {
+                x: Math.floor(Math.random() * (canvasSize / box)) * box,
+                y: Math.floor(Math.random() * (canvasSize / box)) * box
+            };
+
+            if (speed > 100) {
+                speed -= 1; // ลดความเร็วลงทีละเล็กน้อย
+                clearInterval(game);
+                game = setInterval(updateGame, speed);
+            }
+        } else {
+            snake.pop();
+        }
+
+        const newHead = { x: snakeX, y: snakeY };
+        snake.unshift(newHead);
+
+        drawSnake();
+    }
+
+    function drawSnake() {
+        ctx.fillStyle = "#0f0";
+        ctx.strokeStyle = "#222";
+        snake.forEach(part => {
+            ctx.fillRect(part.x, part.y, box, box);
+            ctx.strokeRect(part.x, part.y, box, box);
+        });
+    }
+
+    function drawFood() {
+        ctx.fillStyle = "#f00";
+        ctx.fillRect(food.x, food.y, box, box);
+    }
+
+    function checkCollision() {
+        if (snake[0].x < 0 || snake[0].x >= canvasSize || snake[0].y < 0 || snake[0].y >= canvasSize) return true;
+        for (let i = 1; i < snake.length; i++) {
+            if (snake[0].x === snake[i].x && snake[0].y === snake[i].y) return true;
+        }
+        return false;
+    }
+
+    function displayGameOver() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "36px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over", canvasSize / 2, canvasSize / 2 - 20);
+
+        ctx.font = "24px Arial";
+        ctx.fillText("คะแนน: " + score, canvasSize / 2, canvasSize / 2 + 20);
+    }
+
+    resetGame();
+</script>
+
+</body>
+</html>
